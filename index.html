@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Carné Virtual — Demo</title>
+<!-- Para que, al añadirse a la pantalla de inicio, abra a pantalla completa como una app -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f3f3fb">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ====== Variables de diseño: cambia aquí colores y tamaños ====== */
+  :root {
+    --acento: #1f5fd1;        /* color principal (títulos, flecha, pin) */
+    --fondo: #f3f3fb;         /* fondo de la pantalla */
+    --reloj-bg: #dcdcf7;      /* fondo del recuadro del reloj */
+    --nube: #d9daf3;          /* color de las nubes */
+    --texto: #3b4150;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: "Inter", system-ui, sans-serif;
+    background: var(--fondo);
+    color: var(--texto);
+    display: flex;
+    justify-content: center;
+    overflow-x: hidden;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 430px;
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+    background: var(--fondo);
+  }
+
+  /* ====== Barra superior ====== */
+  .topbar {
+    height: 64px;
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    padding: 0 24px;
+    border-bottom: 1px solid #e2e2ea;
+    background: var(--fondo);
+    position: relative;
+    z-index: 3;
+  }
+  .topbar svg { width: 22px; height: 22px; stroke: var(--acento); }
+  .topbar h1 {
+    font-family: "Bebas Neue", sans-serif;
+    font-size: 22px;
+    letter-spacing: .5px;
+    font-weight: 400;
+    color: #222;
+  }
+
+  /* ====== Reloj ====== */
+  .reloj-wrap { text-align: center; margin-top: 22px; position: relative; z-index: 2; }
+  .reloj {
+    display: inline-block;
+    background: var(--reloj-bg);
+    border-radius: 8px;
+    padding: 10px 24px;
+    font-size: 36px;
+    letter-spacing: 1px;
+    color: #111;
+    font-variant-numeric: tabular-nums;
+  }
+  .fecha { margin-top: 10px; font-size: 16px; color: #4a4f5c; }
+
+  /* ====== Foto ====== */
+  .foto {
+    width: 96px;
+    height: 134px;
+    margin: 36px auto 0;
+    border-radius: 48px 48px 48px 48px / 30px 30px 70px 70px;
+    background: #fff;
+    overflow: hidden;
+    position: relative;
+    z-index: 2;
+    cursor: pointer;
+    box-shadow: 0 0 0 1px #e6e6f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .foto img { width: 100%; height: 100%; object-fit: cover; display: none; }
+  .foto.con-imagen img { display: block; }
+  .foto .hint { font-size: 11px; color: #aaa; text-align: center; padding: 6px; }
+  .foto.con-imagen .hint { display: none; }
+  #inputFoto { display: none; }
+
+  /* ====== Nubes animadas ====== */
+  .cielo { position: absolute; left: 0; right: 0; top: 360px; height: 120px; z-index: 1; pointer-events: none; }
+  .nube {
+    position: absolute;
+    width: 46px; height: 14px;
+    background: var(--nube);
+    border-radius: 14px;
+    animation: flotar linear infinite;
+  }
+  .nube::before, .nube::after {
+    content: ""; position: absolute; background: var(--nube); border-radius: 50%;
+  }
+  .nube::before { width: 20px; height: 20px; left: 8px; top: -10px; }
+  .nube::after  { width: 16px; height: 16px; left: 22px; top: -7px; }
+  @keyframes flotar {
+    from { transform: translateX(-80px) scale(var(--s, 1)); }
+    to   { transform: translateX(520px) scale(var(--s, 1)); }
+  }
+
+  /* Silueta de ciudad al fondo */
+  .ciudad {
+    position: absolute; left: 0; right: 0; top: 480px; height: 220px; z-index: 0;
+    background:
+      linear-gradient(var(--fondo), transparent 30%),
+      linear-gradient(90deg, transparent 0 4%, #e6e6f7 4% 12%, transparent 12% 70%, #e6e6f7 70% 78%, transparent 78%);
+    opacity: .9;
+  }
+  .ciudad::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 60%; background: #ececf8;
+  }
+
+  /* ====== Tarjeta de datos ====== */
+  .tarjeta {
+    position: relative;
+    z-index: 2;
+    margin: 72px 20px 40px;
+    background: #fff;
+    border-radius: 10px;
+    padding: 22px 18px 20px;
+    text-align: center;
+  }
+  .nombre {
+    font-family: "Bebas Neue", sans-serif;
+    color: var(--acento);
+    font-size: 40px;
+    line-height: 1.02;
+    font-weight: 400;
+    margin-bottom: 14px;
+    word-break: break-word;
+  }
+  .etiqueta { font-size: 14px; color: #3d4250; margin-top: 6px; }
+  .valor { font-size: 16px; font-weight: 700; color: #3d4250; margin-top: 4px; }
+  .carrera { font-size: 16px; font-weight: 600; margin-top: 18px; text-transform: uppercase; color: #3d4250; }
+  .campus { font-size: 16px; margin-top: 8px; color: #3d4250; display: flex; justify-content: center; align-items: center; gap: 6px; }
+  .campus svg { width: 14px; height: 14px; fill: var(--acento); }
+
+  .aviso { text-align: center; font-size: 11px; color: #9a9db0; padding: 0 20px 24px; position: relative; z-index: 2; }
+
+  /* Edición en línea: los textos se pueden editar tocándolos */
+  [contenteditable]:focus { outline: 2px dashed #c9c9e6; outline-offset: 2px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+    <h1 contenteditable="true">CARNÉ VIRTUAL</h1>
+  </header>
+
+  <div class="reloj-wrap">
+    <div class="reloj" id="reloj">00:00:00</div>
+    <div class="fecha" id="fecha"></div>
+  </div>
+
+  <label class="foto" id="foto" for="inputFoto" title="Toca para cambiar la foto">
+    <img id="imgFoto" alt="Foto">
+    <span class="hint">Toca para<br>añadir foto</span>
+  </label>
+  <input type="file" id="inputFoto" accept="image/*">
+
+  <div class="cielo" id="cielo"></div>
+  <div class="ciudad"></div>
+
+  <section class="tarjeta">
+    <h2 class="nombre" contenteditable="true">NOMBRE APELLIDO EJEMPLO</h2>
+    <p class="etiqueta">Código de alumno:</p>
+    <p class="valor" contenteditable="true">0000A000</p>
+    <p class="etiqueta">ID:</p>
+    <p class="valor" contenteditable="true">X00000000</p>
+    <p class="carrera" contenteditable="true">Carrera de ejemplo</p>
+    <p class="campus">
+      <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+      <span contenteditable="true">Campus Demo</span>
+    </p>
+  </section>
+
+  <p class="aviso">Proyecto académico · Universidad Demo · No válido como identificación</p>
+</div>
+
+<script>
+  // ====== Reloj en vivo ======
+  const dias = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+  const meses = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+  const dos = n => String(n).padStart(2, "0");
+
+  function actualizarReloj() {
+    const d = new Date();
+    document.getElementById("reloj").textContent =
+      `${dos(d.getHours())}:${dos(d.getMinutes())}:${dos(d.getSeconds())}`;
+    document.getElementById("fecha").textContent =
+      `${dias[d.getDay()]}, ${d.getDate()} ${meses[d.getMonth()]} ${d.getFullYear()}`;
+  }
+  actualizarReloj();
+  setInterval(actualizarReloj, 1000);
+
+  // ====== Nubes: se generan con posición, tamaño y velocidad aleatorios ======
+  const cielo = document.getElementById("cielo");
+  for (let i = 0; i < 9; i++) {
+    const n = document.createElement("div");
+    n.className = "nube";
+    n.style.top = (Math.random() * 100) + "px";
+    n.style.setProperty("--s", (0.6 + Math.random() * 0.9).toFixed(2));
+    const dur = 18 + Math.random() * 22;
+    n.style.animationDuration = dur + "s";
+    n.style.animationDelay = (-Math.random() * dur) + "s"; // empiezan repartidas
+    cielo.appendChild(n);
+  }
+
+  // ====== Foto: elegir imagen del teléfono y guardarla en el navegador ======
+  const foto = document.getElementById("foto");
+  const img = document.getElementById("imgFoto");
+
+  function mostrarFoto(src) {
+    img.src = src;
+    foto.classList.add("con-imagen");
+  }
+
+  const guardada = localStorage.getItem("carnet-foto");
+  if (guardada) mostrarFoto(guardada);
+
+  document.getElementById("inputFoto").addEventListener("change", e => {
+    const archivo = e.target.files[0];
+    if (!archivo) return;
+    const lector = new FileReader();
+    lector.onload = () => {
+      mostrarFoto(lector.result);
+      try { localStorage.setItem("carnet-foto", lector.result); } catch (_) {}
+    };
+    lector.readAsDataURL(archivo);
+  });
+</script>
+</body>
+</html>
